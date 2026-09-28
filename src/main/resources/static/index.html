@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ComplaintBox — Hostel Maintenance Tracker</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Tabler Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="brand-logo">
+                    <i class="ti ti-tools"></i>
+                </div>
+                <div class="brand-info">
+                    <h2>ComplaintBox</h2>
+                    <span>Hostel Tracker</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-tab="dashboard-tab">
+                    <i class="ti ti-layout-dashboard"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button class="nav-item" data-tab="complaints-tab">
+                    <i class="ti ti-clipboard-list"></i>
+                    <span>Complaints</span>
+                    <span class="nav-badge" id="open-count-badge">0</span>
+                </button>
+                <button class="nav-item" data-tab="residents-tab">
+                    <i class="ti ti-users"></i>
+                    <span>Residents</span>
+                </button>
+                <button class="nav-item" data-tab="staff-tab">
+                    <i class="ti ti-user-cog"></i>
+                    <span>Staff & Warden</span>
+                </button>
+                <button class="nav-item" data-tab="categories-tab">
+                    <i class="ti ti-category"></i>
+                    <span>Categories</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="system-status">
+                    <span class="status-indicator online"></span>
+                    <span>System Connected</span>
+                </div>
+                <a href="/swagger-ui/index.html" target="_blank" class="api-docs-link">
+                    <i class="ti ti-code"></i> API Docs (Swagger)
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle Menu">
+                        <i class="ti ti-menu-2"></i>
+                    </button>
+                    <div>
+                        <h1 class="page-title" id="page-title">Maintenance Dashboard</h1>
+                        <p class="page-subtitle" id="page-subtitle">Track, assign, and resolve student hostel complaints</p>
+                    </div>
+                </div>
+
+                <div class="header-right">
+                    <div class="current-date" id="current-date"></div>
+                    <button class="btn btn-primary" id="btn-quick-new-complaint">
+                        <i class="ti ti-plus"></i> New Complaint
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dashboard Stats Row -->
+            <section class="stats-grid">
+                <div class="stat-card stat-total">
+                    <div class="stat-icon-wrapper blue">
+                        <i class="ti ti-files"></i>
+                    </div>
+                    <div class="stat-details">
+                        <span class="stat-label">Total Complaints</span>
+                        <h3 class="stat-value" id="stat-total-complaints">0</h3>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-open">
+                    <div class="stat-icon-wrapper sky">
+                        <i class="ti ti-clock-pause"></i>
+                    </div>
+                    <div class="stat-details">
+                        <span class="stat-label">Open</span>
+                        <h3 class="stat-value" id="stat-open-complaints">0</h3>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-progress">
+                    <div class="stat-icon-wrapper amber">
+                        <i class="ti ti-refresh"></i>
+                    </div>
+                    <div class="stat-details">
+                        <span class="stat-label">In Progress</span>
+                        <h3 class="stat-value" id="stat-progress-complaints">0</h3>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-resolved">
+                    <div class="stat-icon-wrapper green">
+                        <i class="ti ti-circle-check"></i>
+                    </div>
+                    <div class="stat-details">
+                        <span class="stat-label">Resolved</span>
+                        <h3 class="stat-value" id="stat-resolved-complaints">0</h3>
+                    </div>
+                </div>
+
+                <div class="stat-card stat-overdue">
+                    <div class="stat-icon-wrapper red">
+                        <i class="ti ti-alert-triangle"></i>
+                    </div>
+                    <div class="stat-details">
+                        <span class="stat-label">Overdue (>5 Days)</span>
+                        <h3 class="stat-value" id="stat-overdue-complaints">0</h3>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 1: DASHBOARD / COMPLAINTS VIEW -->
+            <section class="tab-pane active" id="dashboard-tab">
+                <div class="content-card">
+                    <div class="card-header-bar">
+                        <div class="header-actions-left">
+                            <h2 class="card-heading">Active Complaints Tracker</h2>
+                            <div class="filter-pills" id="complaint-status-filters">
+                                <button class="filter-pill active" data-filter="ALL">All</button>
+                                <button class="filter-pill" data-filter="OPEN">Open</button>
+                                <button class="filter-pill" data-filter="IN_PROGRESS">In Progress</button>
+                                <button class="filter-pill" data-filter="RESOLVED">Resolved</button>
+                                <button class="filter-pill alert-pill" data-filter="OVERDUE">Overdue</button>
+                            </div>
+                        </div>
+
+                        <div class="header-actions-right">
+                            <div class="search-box">
+                                <i class="ti ti-search search-icon"></i>
+                                <input type="text" id="complaint-search-input" placeholder="Search description...">
+                                <button class="btn btn-sm btn-secondary" id="complaint-search-btn">Search</button>
+                                <button class="btn btn-sm btn-outline" id="complaint-clear-btn">Clear</button>
+                            </div>
+                            <button class="btn btn-primary" id="btn-add-complaint">
+                                <i class="ti ti-plus"></i> Log Complaint
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table" id="complaints-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Room</th>
+                                    <th>Category</th>
+                                    <th>Description</th>
+                                    <th>Resident</th>
+                                    <th>Assigned Staff</th>
+                                    <th>Status</th>
+                                    <th>Age / Overdue</th>
+                                    <th>Remarks</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="complaints-table-body">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="empty-state" id="complaints-empty" style="display: none;">
+                        <i class="ti ti-clipboard-x"></i>
+                        <h3>No complaints found</h3>
+                        <p>All hostel maintenance issues are resolved or no matching records exist.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: COMPLAINTS TAB (Redirects to or mirrors main view) -->
+            <section class="tab-pane" id="complaints-tab">
+                <!-- Managed synchronously with dashboard-tab -->
+            </section>
+
+            <!-- TAB 3: RESIDENTS TAB -->
+            <section class="tab-pane" id="residents-tab">
+                <div class="content-card">
+                    <div class="card-header-bar">
+                        <div class="header-actions-left">
+                            <h2 class="card-heading">Hostel Residents Directory</h2>
+                            <span class="card-sub-info" id="resident-count-text">Total 0 residents</span>
+                        </div>
+                        <div class="header-actions-right">
+                            <div class="search-box">
+                                <i class="ti ti-search search-icon"></i>
+                                <input type="text" id="resident-search-input" placeholder="Search by name...">
+                                <button class="btn btn-sm btn-secondary" id="resident-search-btn">Search</button>
+                                <button class="btn btn-sm btn-outline" id="resident-clear-btn">Clear</button>
+                            </div>
+                            <button class="btn btn-primary" id="btn-add-resident">
+                                <i class="ti ti-user-plus"></i> Add Resident
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table" id="residents-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Room Number</th>
+                                    <th>Phone</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="residents-table-body">
+                                <!-- Dynamic -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="empty-state" id="residents-empty" style="display: none;">
+                        <i class="ti ti-user-off"></i>
+                        <h3>No residents registered</h3>
+                        <p>Add hostel residents to allow maintenance complaint logging.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: STAFF TAB -->
+            <section class="tab-pane" id="staff-tab">
+                <div class="content-card">
+                    <div class="card-header-bar">
+                        <div class="header-actions-left">
+                            <h2 class="card-heading">Maintenance Staff & Warden</h2>
+                            <span class="card-sub-info" id="staff-count-text">Total 0 staff</span>
+                        </div>
+                        <div class="header-actions-right">
+                            <div class="search-box">
+                                <i class="ti ti-search search-icon"></i>
+                                <input type="text" id="staff-search-input" placeholder="Search by name...">
+                                <button class="btn btn-sm btn-secondary" id="staff-search-btn">Search</button>
+                                <button class="btn btn-sm btn-outline" id="staff-clear-btn">Clear</button>
+                            </div>
+                            <button class="btn btn-primary" id="btn-add-staff">
+                                <i class="ti ti-user-plus"></i> Add Staff
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table" id="staff-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role / Specialty</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="staff-table-body">
+                                <!-- Dynamic -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="empty-state" id="staff-empty" style="display: none;">
+                        <i class="ti ti-users"></i>
+                        <h3>No staff registered</h3>
+                        <p>Add electricians, plumbers, wardens and cleaning staff.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 5: CATEGORIES TAB -->
+            <section class="tab-pane" id="categories-tab">
+                <div class="content-card">
+                    <div class="card-header-bar">
+                        <div class="header-actions-left">
+                            <h2 class="card-heading">Issue Categories</h2>
+                            <span class="card-sub-info" id="category-count-text">Total 0 categories</span>
+                        </div>
+                        <div class="header-actions-right">
+                            <div class="search-box">
+                                <i class="ti ti-search search-icon"></i>
+                                <input type="text" id="category-search-input" placeholder="Search category...">
+                                <button class="btn btn-sm btn-secondary" id="category-search-btn">Search</button>
+                                <button class="btn btn-sm btn-outline" id="category-clear-btn">Clear</button>
+                            </div>
+                            <button class="btn btn-primary" id="btn-add-category">
+                                <i class="ti ti-plus"></i> Add Category
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table" id="categories-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Category Name</th>
+                                    <th>Description</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="categories-table-body">
+                                <!-- Dynamic -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="empty-state" id="categories-empty" style="display: none;">
+                        <i class="ti ti-category-2"></i>
+                        <h3>No categories found</h3>
+                        <p>Define categories like Plumbing, Electrical, Cleaning, Furniture, etc.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL: ADD / EDIT COMPLAINT -->
+    <div class="modal-overlay" id="complaint-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="complaint-modal-title">Log New Complaint</h3>
+                <button class="modal-close" data-modal="complaint-modal">&times;</button>
+            </div>
+            <form id="complaint-form" novalidate>
+                <input type="hidden" id="complaint-id">
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group col-6">
+                            <label for="complaint-residentId">Resident <span class="required">*</span></label>
+                            <select id="complaint-residentId" name="residentId" required>
+                                <option value="">Select Resident</option>
+                            </select>
+                            <span class="field-error" id="err-complaint-residentId"></span>
+                        </div>
+                        <div class="form-group col-6">
+                            <label for="complaint-roomNumber">Room Number <span class="required">*</span></label>
+                            <input type="text" id="complaint-roomNumber" name="roomNumber" placeholder="e.g. Block B - 204" required>
+                            <span class="field-error" id="err-complaint-roomNumber"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-6">
+                            <label for="complaint-categoryId">Category <span class="required">*</span></label>
+                            <select id="complaint-categoryId" name="categoryId" required>
+                                <option value="">Select Category</option>
+                            </select>
+                            <span class="field-error" id="err-complaint-categoryId"></span>
+                        </div>
+                        <div class="form-group col-6">
+                            <label for="complaint-staffId">Assign Staff (Optional)</label>
+                            <select id="complaint-staffId" name="staffId">
+                                <option value="">Unassigned</option>
+                            </select>
+                            <span class="field-error" id="err-complaint-staffId"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="complaint-description">Issue Description <span class="required">*</span></label>
+                        <textarea id="complaint-description" name="description" rows="3" placeholder="Describe the maintenance problem in detail..." required></textarea>
+                        <span class="field-error" id="err-complaint-description"></span>
+                    </div>
+
+                    <div class="form-row" id="complaint-status-row">
+                        <div class="form-group col-6">
+                            <label for="complaint-status">Status</label>
+                            <select id="complaint-status" name="status">
+                                <option value="OPEN">OPEN</option>
+                                <option value="IN_PROGRESS">IN_PROGRESS</option>
+                                <option value="RESOLVED">RESOLVED</option>
+                            </select>
+                            <span class="field-error" id="err-complaint-status"></span>
+                        </div>
+                        <div class="form-group col-6">
+                            <label for="complaint-remark">Remark / Revert Note</label>
+                            <input type="text" id="complaint-remark" name="remark" placeholder="Required if moving status backward">
+                            <span class="field-error" id="err-complaint-remark"></span>
+                        </div>
+                    </div>
+                    <div class="modal-notice" id="complaint-rule-notice">
+                        <i class="ti ti-info-circle"></i>
+                        <span>Moving status backward (e.g. Resolved &rarr; Open) requires a remark explaining why.</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" data-modal="complaint-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="complaint-submit-btn">Save Complaint</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD / EDIT RESIDENT -->
+    <div class="modal-overlay" id="resident-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="resident-modal-title">Add Resident</h3>
+                <button class="modal-close" data-modal="resident-modal">&times;</button>
+            </div>
+            <form id="resident-form" novalidate>
+                <input type="hidden" id="resident-id">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="resident-name">Full Name <span class="required">*</span></label>
+                        <input type="text" id="resident-name" name="name" placeholder="Student / Resident Name" required>
+                        <span class="field-error" id="err-resident-name"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="resident-email">Email Address <span class="required">*</span></label>
+                        <input type="email" id="resident-email" name="email" placeholder="student@hostel.edu" required>
+                        <span class="field-error" id="err-resident-email"></span>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-6">
+                            <label for="resident-roomNumber">Room Number <span class="required">*</span></label>
+                            <input type="text" id="resident-roomNumber" name="roomNumber" placeholder="e.g. A-101" required>
+                            <span class="field-error" id="err-resident-roomNumber"></span>
+                        </div>
+                        <div class="form-group col-6">
+                            <label for="resident-phone">Phone Number</label>
+                            <input type="text" id="resident-phone" name="phone" placeholder="+91 9876543210">
+                            <span class="field-error" id="err-resident-phone"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" data-modal="resident-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="resident-submit-btn">Save Resident</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD / EDIT STAFF -->
+    <div class="modal-overlay" id="staff-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="staff-modal-title">Add Staff Member</h3>
+                <button class="modal-close" data-modal="staff-modal">&times;</button>
+            </div>
+            <form id="staff-form" novalidate>
+                <input type="hidden" id="staff-id">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="staff-name">Staff Name <span class="required">*</span></label>
+                        <input type="text" id="staff-name" name="name" placeholder="Staff Name" required>
+                        <span class="field-error" id="err-staff-name"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="staff-email">Staff Email <span class="required">*</span></label>
+                        <input type="email" id="staff-email" name="email" placeholder="staff@hostel.edu" required>
+                        <span class="field-error" id="err-staff-email"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="staff-role">Role / Specialization <span class="required">*</span></label>
+                        <select id="staff-role" name="role" required>
+                            <option value="">Select Role</option>
+                            <option value="Warden">Hostel Warden</option>
+                            <option value="Plumber">Plumber</option>
+                            <option value="Electrician">Electrician</option>
+                            <option value="Carpenter">Carpenter</option>
+                            <option value="Housekeeping / Cleaner">Housekeeping / Cleaner</option>
+                            <option value="Appliance Technician">Appliance Technician</option>
+                        </select>
+                        <span class="field-error" id="err-staff-role"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" data-modal="staff-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="staff-submit-btn">Save Staff</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD / EDIT CATEGORY -->
+    <div class="modal-overlay" id="category-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="category-modal-title">Add Category</h3>
+                <button class="modal-close" data-modal="category-modal">&times;</button>
+            </div>
+            <form id="category-form" novalidate>
+                <input type="hidden" id="category-id">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="category-name">Category Name <span class="required">*</span></label>
+                        <input type="text" id="category-name" name="name" placeholder="e.g. Plumbing, Electrical" required>
+                        <span class="field-error" id="err-category-name"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="category-description">Description</label>
+                        <textarea id="category-description" name="description" rows="3" placeholder="Brief scope of issues handled under this category..."></textarea>
+                        <span class="field-error" id="err-category-description"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" data-modal="category-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="category-submit-btn">Save Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: CONFIRM DELETE -->
+    <div class="modal-overlay" id="delete-modal">
+        <div class="modal-container modal-sm">
+            <div class="modal-header danger-header">
+                <h3>Confirm Deletion</h3>
+                <button class="modal-close" data-modal="delete-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="delete-modal-text">Are you sure you want to permanently delete this item? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" data-modal="delete-modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete-btn">Delete Permanently</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- JavaScript -->
+    <script src="js/script.js"></script>
+</body>
+</html>
